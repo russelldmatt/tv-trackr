@@ -1,0 +1,44 @@
+body {
+    background:#E6EEF6;
+}
+.wrap {
+    margin-left:20px;
+}
+.aire_date {
+    font-size: 80%;
+}
+.box{
+    display:inline-block;
+    /* position:relative; */
+    margin:10px;
+    padding:10px;
+    border-radius:5px;
+    /* font */
+    font-family: 'Didact Gothic', sans-serif;
+    /* font-family: 'Raleway', sans-serif; */
+    font-weight:normal;
+    text-align:center;
+}
+.new {
+    /* background-color : LightGreen; */
+    background-color: #9EEBA1;
+    /* shadow */
+    -webkit-box-shadow:0 0 30px 2px #479F41;
+    -moz-box-shadow:0 0 30px 2px #479F41;
+    box-shadow: 0 0 30px 2px #479F41;
+}
+.future {
+    background-color : Khaki;
+    /* shadow */
+    -webkit-box-shadow:0 0 30px 2px #d2c342;
+    -moz-box-shadow:0 0 30px 2px #d2c342;
+    box-shadow: 0 0 30px 2px #d2c342;
+}
+.seen {
+    opacity : 0.5;
+    background-color : LightCoral;
+    /* shadow */
+    -webkit-box-shadow:0 0 30px 2px LightCoral;
+    -moz-box-shadow:0 0 30px 2px LightCoral;
+    box-shadow: 0 0 30px 2px LightCoral;
+}

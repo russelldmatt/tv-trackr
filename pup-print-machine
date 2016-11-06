@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import fileinput
+
+input = fileinput.input()
+
+cache = ""
+printed_lines = 0
+for idx, line in enumerate(input):
+    line = line.rstrip()
+    # print "line:", line
+    # print "line 0:", line[0], "<- that"
+    if idx == 0 or (len(line) > 0 and line[0] == " "):
+        cache = cache + line.strip()
+    else:
+        # print "finished a line"
+        if printed_lines % 2 == 0:
+            cache = cache + line.strip()
+        else: 
+            print cache
+            cache = line.strip()
+        printed_lines += 1
+
+print cache
