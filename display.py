@@ -123,7 +123,7 @@ shows = [
 ]
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create tv-guide html page.')
+    parser = argparse.ArgumentParser(description='Create tv-trackr html page.')
     parser.add_argument('-o', '--out',
                         nargs='?', 
                         type=argparse.FileType('w'),
