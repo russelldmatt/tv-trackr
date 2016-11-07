@@ -4,43 +4,6 @@ import datetime
 import argparse
 import yattag
 
-################
-# Global stuff... would love to get rid of this.
-indentation = 0
-out = None # will be overwritten by args
-################
-
-def write(s):
-    global indentation
-    global out
-    out.write(' ' * indentation + s + '\n')
-
-class HtmlTag:
-    def __init__(self, name, classes = None, style = None):
-        self.name = name
-        self.classes = classes
-        self.style = style
-        
-    def __enter__(self):
-        class_str = ' class="{}"'.format(' '.join(self.classes)) if self.classes else ''
-        style_str = ' style="{}"'.format(';'.join([ k + ':' + v for (k, v) in self.style.iteritems() ])) if self.style else ''
-        write("<{}{}{}>".format(self.name, class_str, style_str))
-        global indentation
-        indentation += 2
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        global indentation
-        indentation -= 2
-        write('</{}>'.format(self.name))
-
-def helper(s, el, classes, style):
-    class_str = ' class="{}"'.format(' '.join(classes)) if classes else ''
-    style_str = ' style="{}"'.format(';'.join([ k + ':' + v for (k, v) in style.iteritems() ])) if style else ''
-    return '<{}{}{}>{}</{}>\n'.format(el, class_str, style_str, s.encode('utf8'), el)
-        
-def td(s, classes = None, style = None): return helper(s, 'td', classes, style)
-def div(s, classes = None, style = None): return helper(s, 'div', classes, style)
-def h3(s, classes = None, style = None): return helper(s, 'h3', classes, style)
-
 class EpisodeNumber():
     # Takes something that looks like this: Season 03, Episode 03
     def __init__(self, episode_number_string):
@@ -73,7 +36,6 @@ class Episode():
         doc.stag('br')
         # asis so yattag doesn't escape my already-escaped characters
         doc.asis(self.name)
-        # doc.text(self.name.encode('utf8'))
 
 class Show():
     def __init__(self, show, episodes, last_seen):
@@ -92,13 +54,11 @@ class Show():
         print >> sys.stderr, "index of", self.last_seen, ":", index_of_last_seen
         eps = reversed([ (idx <= index_of_last_seen, ep) for (idx, ep) in enumerate(self.episodes) ])
         doc.line('h3', self.show)
-        # { 'white-space' : 'nowrap' }
         with doc.tag('div', style="white-space:nowrap"):
             for (seen, ep) in eps:
                 klass = 'seen' if seen else ('new' if ep.date < today else 'future')
                 with doc.tag('div', klass=' '.join(["box", klass])):
                     ep.add_html(doc)
-        # return h3(self.show) + div(html_str, style= { 'white-space' : 'nowrap' })
         
 def load_episodes(show, filename): 
     return [ Episode(show, json.loads(line)) for line in file(filename) ]
@@ -165,4 +125,6 @@ if __name__ == "__main__":
                 episodes = load_episodes(show, 'show-episodes/' + episode_file + '.json')
                 show = Show(show, episodes, last_seen)
                 show.add_html(doc, today)
+    
+    # write out the (indented) document
     args.out.write(yattag.indent(doc.getvalue()))
