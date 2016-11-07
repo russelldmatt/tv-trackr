@@ -2,12 +2,13 @@ import sys
 import json
 import datetime
 import argparse
+import yattag
 
-################3
+################
 # Global stuff... would love to get rid of this.
 indentation = 0
 out = None # will be overwritten by args
-################3
+################
 
 def write(s):
     global indentation
@@ -36,7 +37,6 @@ def helper(s, el, classes, style):
     style_str = ' style="{}"'.format(';'.join([ k + ':' + v for (k, v) in style.iteritems() ])) if style else ''
     return '<{}{}{}>{}</{}>\n'.format(el, class_str, style_str, s.encode('utf8'), el)
         
-def tr(s, classes = None, style = None): return helper(s, 'tr', classes, style)
 def td(s, classes = None, style = None): return helper(s, 'td', classes, style)
 def div(s, classes = None, style = None): return helper(s, 'div', classes, style)
 def h3(s, classes = None, style = None): return helper(s, 'h3', classes, style)
@@ -65,12 +65,15 @@ class Episode():
     def __repr__(self): 
         return str(self.json_repr)
         
-    def html(self):
-        return '<br>'.join([str(self.episode_number),
-                            '<span class="aire_date">{}</span>'.format(datetime.datetime.strftime(self.date, '%B %d, %Y')),
-                            self.name
-                        ]
-        )
+    def add_html(self, doc):
+        doc.text(str(self.episode_number))
+        doc.stag('br')
+        with doc.tag('span', klass="aire_date"):
+            doc.text(datetime.datetime.strftime(self.date, '%B %d, %Y'))
+        doc.stag('br')
+        # asis so yattag doesn't escape my already-escaped characters
+        doc.asis(self.name)
+        # doc.text(self.name.encode('utf8'))
 
 class Show():
     def __init__(self, show, episodes, last_seen):
@@ -84,15 +87,18 @@ class Show():
         else:
             return next((idx for (idx, ep) in enumerate(sorted(self.episodes)) if ep.name == self.last_seen), None)
 
-    def html(self, today):
+    def add_html(self, doc, today):
         index_of_last_seen = self.last_seen_index()
         print >> sys.stderr, "index of", self.last_seen, ":", index_of_last_seen
-        html_str = ''
         eps = reversed([ (idx <= index_of_last_seen, ep) for (idx, ep) in enumerate(self.episodes) ])
-        for (seen, ep) in eps:
-            class_ = 'seen' if seen else ('new' if ep.date < today else 'future')
-            html_str += div(ep.html(), classes = ["box", class_])
-        return h3(self.show) + div(html_str, style= { 'white-space' : 'nowrap' })
+        doc.line('h3', self.show)
+        # { 'white-space' : 'nowrap' }
+        with doc.tag('div', style="white-space:nowrap"):
+            for (seen, ep) in eps:
+                klass = 'seen' if seen else ('new' if ep.date < today else 'future')
+                with doc.tag('div', klass=' '.join(["box", klass])):
+                    ep.add_html(doc)
+        # return h3(self.show) + div(html_str, style= { 'white-space' : 'nowrap' })
         
 def load_episodes(show, filename): 
     return [ Episode(show, json.loads(line)) for line in file(filename) ]
@@ -143,19 +149,20 @@ if __name__ == "__main__":
                         help='css file to include in header',
     )
     args = parser.parse_args()
-    out = args.out
 
-    with HtmlTag('head'):
+    doc = yattag.Doc()
+    with doc.tag('head'):
         for imprt in args.imports:
-            write('<link rel="import" href="{}">'.format(imprt))
+            doc.stag('link', rel="import", href=imprt)
         for css in args.css_files:
-            write('<link rel="stylesheet" type="text/css" href="{}">'.format(css))
+            doc.stag('link', rel="stylesheet", type="text/css", href=css)
 
-    with HtmlTag('body'):
+    with doc.tag('body'):
         today = datetime.date.today()
         for (show, episode_file, last_seen) in shows:
-            with HtmlTag('div'):
+            with doc.tag('div'):
                 print >> sys.stderr, "processing show", show
                 episodes = load_episodes(show, 'show-episodes/' + episode_file + '.json')
                 show = Show(show, episodes, last_seen)
-                write(show.html(today))
+                show.add_html(doc, today)
+    args.out.write(yattag.indent(doc.getvalue()))
